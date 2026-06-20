@@ -89,17 +89,8 @@ npm install
 # הרצה מקומית
 npm run dev
 
+תרשים ERD
 
-#מבנה בסיס נתונים (ERD)
-המערכת משתמשת בטבלה אחת:
+<img width="320" height="318" alt="image" src="https://github.com/user-attachments/assets/11464e0a-9703-45ac-9b1b-0ebf9fafc79f" />
 
-transactions
-id (uuid)
-title (text)
-amount (numeric)
-type (income / expense)
-category (text)
-date (date)
-
-<img width="320" height="318" alt="image" src="https://github.com/user-attachments/assets/5b31732a-9cd1-453d-ade2-8706b7026ba0" />
 
