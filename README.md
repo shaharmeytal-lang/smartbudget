@@ -89,8 +89,20 @@ npm install
 # הרצה מקומית
 npm run dev
 
-תרשים ERD
-
-<img width="320" height="318" alt="image" src="https://github.com/user-attachments/assets/11464e0a-9703-45ac-9b1b-0ebf9fafc79f" />
 
 
+## 📊 ERD – מודל נתונים
+
+המערכת מבוססת על טבלה מרכזית אחת: `transactions`
+
+```mermaid
+erDiagram
+
+    transactions {
+        uuid id PK
+        text title
+        numeric amount
+        text type
+        text category
+        date date
+    }
