@@ -40,7 +40,7 @@ export default function Page() {
     load();
   }, []);
 
-  // 💾 Save (insert / update)
+  // 💾 Save / Update
   const save = async () => {
     if (!title || !amount || !date) return;
 
@@ -93,19 +93,19 @@ export default function Page() {
     setEditId(t.id);
   };
 
-  // 📅 Filter by month
+  // 📅 Month filter
   const monthFiltered = useMemo(() => {
     return transactions.filter((t) =>
       month ? t.date.startsWith(month) : true
     );
   }, [transactions, month]);
 
-  // 🔎 Search
+  // 🔎 Search filter
   const filtered = monthFiltered.filter((t) =>
     t.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  // 💰 totals
+  // 💰 Summary
   const income = monthFiltered
     .filter((t) => t.type === "income")
     .reduce((s, t) => s + t.amount, 0);
@@ -120,13 +120,25 @@ export default function Page() {
     <main className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
 
+        {/* TITLE */}
         <h1 className="text-2xl font-bold mb-4">💰 SmartBudget</h1>
 
         {/* SUMMARY */}
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div>הכנסות: ₪{income}</div>
-          <div>הוצאות: ₪{expense}</div>
-          <div>יתרה: ₪{balance}</div>
+        <div className="grid grid-cols-3 gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+          <div className="text-center">
+            <div className="text-sm text-gray-500">הכנסות</div>
+            <div className="text-lg font-bold text-green-600">₪{income}</div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-sm text-gray-500">הוצאות</div>
+            <div className="text-lg font-bold text-red-600">₪{expense}</div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-sm text-gray-500">יתרה</div>
+            <div className="text-lg font-bold text-black">₪{balance}</div>
+          </div>
         </div>
 
         {/* FILTERS */}
@@ -158,7 +170,7 @@ export default function Page() {
 
           <input
             className="border p-2 w-full"
-            placeholder="סכום (ניתן להקליד)"
+            placeholder="סכום"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
