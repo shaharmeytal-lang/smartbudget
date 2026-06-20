@@ -74,7 +74,7 @@ https://smartbudget-eight-bice.vercel.app/
 
 ## 📸 צילום מסך
 
-> הוסף כאן צילום מסך של האפליקציה (מומלץ מאוד להגשה)
+<img width="767" height="809" alt="image" src="https://github.com/user-attachments/assets/a0c90d69-764a-4c92-864b-b5badf8fdbc4" />
 
 ---
 
