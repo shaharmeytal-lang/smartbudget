@@ -74,7 +74,9 @@ https://smartbudget-eight-bice.vercel.app/
 
 ## 📸 צילום מסך
 
-<img width="768" height="814" alt="image" src="https://github.com/user-attachments/assets/41759710-1749-49f0-ac6e-00c743b9210f" />
+
+<img width="768" height="814" alt="image" src="https://github.com/user-attachments/assets/da2637bd-9c1f-4e59-8c99-43ea9805aa8c" />
+
 
 ---
 
