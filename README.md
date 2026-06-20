@@ -90,3 +90,15 @@ https://smartbudget-eight-bice.vercel.app/
 <img width="320" height="318" alt="image" src="https://github.com/user-attachments/assets/c9541ab9-57ee-4144-a65b-8fc2fb310788" />
 
 
+
+## 🔌 שירותים חיצוניים ואינטגרציות
+
+| שירות | סוג | למה משמש |
+|------|------|-----------|
+| Supabase | Backend / Database / API | אחסון וניהול נתוני עסקאות (הכנסות והוצאות), כולל פעולות CRUD (הוספה, עדכון, מחיקה, שליפה) |
+| Vercel | Hosting / Deployment | אירוח האפליקציה והעלאת גרסאות אוטומטית מה־GitHub |
+| Next.js | Frontend Framework | בניית ממשק משתמש דינמי עם תמיכה ב־React ו־Server/Client Components |
+| Tailwind CSS | UI Styling | עיצוב מהיר ורגיש (Responsive Design) של הממשק |
+| GitHub | Version Control | ניהול קוד, שמירת גרסאות וחיבור ל־CI/CD עם Vercel |
+
+
