@@ -1,14 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type Transaction = {
   id: string;
@@ -16,119 +9,80 @@ type Transaction = {
   amount: number;
   type: "income" | "expense";
   category: string;
-  date: string; // YYYY-MM-DD
+  date: string;
 };
 
-const defaultCategories = ["אוכל", "תחבורה", "בילויים", "שכר", "אחר"];
-
-export default function Home() {
+export default function Page() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense");
   const [category, setCategory] = useState("אוכל");
   const [date, setDate] = useState("");
 
-  const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState("הכל");
-  const [month, setMonth] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
-
   const [editId, setEditId] = useState<string | null>(null);
 
-  // Load
+  // 📥 Load data
+  const load = async () => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (!error) {
+      setTransactions((data as Transaction[]) || []);
+    }
+  };
+
   useEffect(() => {
-    const data = localStorage.getItem("transactions");
-    if (data) setTransactions(JSON.parse(data));
+    load();
   }, []);
 
-  // Save
-  useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-  }, [transactions]);
+  // 💾 Save (insert / update)
+  const save = async () => {
+    if (!title || !amount || !date) return;
 
-  // Month filter
-  const monthFiltered = useMemo(() => {
-    return transactions.filter((t) =>
-      month ? t.date.startsWith(month) : true
-    );
-  }, [transactions, month]);
+    if (editId) {
+      await supabase
+        .from("transactions")
+        .update({
+          title,
+          amount: Number(amount),
+          type,
+          category,
+          date,
+        })
+        .eq("id", editId);
+    } else {
+      await supabase.from("transactions").insert([
+        {
+          title,
+          amount: Number(amount),
+          type,
+          category,
+          date,
+        },
+      ]);
+    }
 
-  // Search + category
-  const filtered = monthFiltered.filter((t) => {
-    const matchesSearch = t.title.includes(search);
-    const matchesCategory =
-      filterCategory === "הכל" || t.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Totals
-  const income = monthFiltered
-    .filter((t) => t.type === "income")
-    .reduce((s, t) => s + t.amount, 0);
-
-  const expense = monthFiltered
-    .filter((t) => t.type === "expense")
-    .reduce((s, t) => s + t.amount, 0);
-
-  const savings = income - expense;
-
-  // Budget is derived from income
-  const budget = income;
-  const remainingBudget = budget - expense;
-  const isOverBudget = remainingBudget < 0;
-
-  // Categories
-  const categories = ["הכל", ...new Set(transactions.map((t) => t.category))];
-
-  // Chart (expenses per category)
-  const chartData = defaultCategories.map((cat) => {
-    const total = monthFiltered
-      .filter((t) => t.category === cat && t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0);
-
-    return { name: cat, amount: total };
-  });
-
-  const resetForm = () => {
     setTitle("");
     setAmount("");
     setType("expense");
     setCategory("אוכל");
     setDate("");
     setEditId(null);
+
+    load();
   };
 
-  const addOrUpdate = () => {
-    if (!title || !amount || !date) return;
-
-    if (editId) {
-      setTransactions((prev) =>
-        prev.map((t) =>
-          t.id === editId
-            ? { ...t, title, amount: Number(amount), type, category, date }
-            : t
-        )
-      );
-    } else {
-      const newT: Transaction = {
-        id: Date.now().toString(),
-        title,
-        amount: Number(amount),
-        type,
-        category,
-        date,
-      };
-      setTransactions([newT, ...transactions]);
-    }
-
-    resetForm();
+  // 🗑 Delete
+  const remove = async (id: string) => {
+    await supabase.from("transactions").delete().eq("id", id);
+    load();
   };
 
-  const deleteTransaction = (id: string) => {
-    setTransactions(transactions.filter((t) => t.id !== id));
-  };
-
+  // ✏️ Edit
   const startEdit = (t: Transaction) => {
     setTitle(t.title);
     setAmount(String(t.amount));
@@ -138,122 +92,49 @@ export default function Home() {
     setEditId(t.id);
   };
 
+  // 📊 Totals
+  const income = transactions
+    .filter((t) => t.type === "income")
+    .reduce((s, t) => s + t.amount, 0);
+
+  const expense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((s, t) => s + t.amount, 0);
+
+  const balance = income - expense;
+
   return (
-    <main
-      className={
-        darkMode
-          ? "bg-gray-900 text-white min-h-screen p-6"
-          : "bg-gray-100 min-h-screen p-6"
-      }
-    >
-      <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow p-6">
+    <main className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
 
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">💰 SmartBudget</h1>
-
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="px-3 py-1 border rounded"
-          >
-            {darkMode ? "☀️ Light" : "🌙 Dark"}
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold mb-4">💰 SmartBudget</h1>
 
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-4 mt-6">
-          <div className="bg-green-100 p-3 rounded text-center">
-            הכנסות <div className="font-bold">₪{income}</div>
-          </div>
-
-          <div className="bg-red-100 p-3 rounded text-center">
-            הוצאות <div className="font-bold">₪{expense}</div>
-          </div>
-
-          <div className="bg-blue-100 p-3 rounded text-center">
-            חיסכון <div className="font-bold">₪{savings}</div>
-          </div>
-        </div>
-
-        {/* Budget */}
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="p-4 bg-yellow-100 rounded">
-            💰 תקציב (מהכנסות): ₪{budget}
-          </div>
-
-          <div
-            className={`p-4 rounded ${
-              isOverBudget ? "bg-red-200" : "bg-green-200"
-            }`}
-          >
-            💸 נשאר: ₪{remainingBudget}
-          </div>
-        </div>
-
-        {isOverBudget && (
-          <div className="mt-3 p-3 bg-red-100 text-red-700 rounded">
-            ⚠️ חרגת מהתקציב!
-          </div>
-        )}
-
-        {/* Month */}
-        <input
-          type="month"
-          className="mt-4 p-2 border rounded"
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-        />
-
-        {/* Chart */}
-        <div className="h-64 mt-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="amount" fill="#111827" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Filters */}
-        <div className="mt-6 flex gap-2">
-          <input
-            className="flex-1 p-2 border rounded"
-            placeholder="חיפוש..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <select
-            className="p-2 border rounded"
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-          >
-            {categories.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div>הכנסות: ₪{income}</div>
+          <div>הוצאות: ₪{expense}</div>
+          <div>יתרה: ₪{balance}</div>
         </div>
 
         {/* Form */}
-        <div className="mt-6 space-y-2">
+        <div className="space-y-2 mb-4">
+
           <input
-            className="w-full border p-2 rounded"
+            className="border p-2 w-full"
             placeholder="כותרת"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
 
           <input
-            className="w-full border p-2 rounded"
+            className="border p-2 w-full"
             placeholder="סכום"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
 
           <select
-            className="w-full border p-2 rounded"
+            className="border p-2 w-full"
             value={type}
             onChange={(e) => setType(e.target.value as any)}
           >
@@ -262,36 +143,39 @@ export default function Home() {
           </select>
 
           <select
-            className="w-full border p-2 rounded"
+            className="border p-2 w-full"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            {defaultCategories.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
+            <option>אוכל</option>
+            <option>תחבורה</option>
+            <option>בילויים</option>
+            <option>שכר</option>
+            <option>אחר</option>
           </select>
 
           <input
             type="date"
-            className="w-full border p-2 rounded"
+            className="border p-2 w-full"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
 
           <button
-            onClick={addOrUpdate}
-            className="w-full bg-black text-white p-2 rounded"
+            onClick={save}
+            className="bg-black text-white w-full p-2"
           >
-            {editId ? "עדכן עסקה" : "הוסף עסקה"}
+            {editId ? "עדכן" : "הוסף"}
           </button>
+
         </div>
 
         {/* List */}
-        <div className="mt-6 space-y-2">
-          {filtered.map((t) => (
+        <div className="space-y-2">
+          {transactions.map((t) => (
             <div
               key={t.id}
-              className="flex justify-between items-center border p-2 rounded"
+              className="flex justify-between border p-2 rounded"
             >
               <div>
                 <div className="font-bold">{t.title}</div>
@@ -300,7 +184,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex gap-3 items-center">
+              <div className="flex gap-2 items-center">
                 <span
                   className={
                     t.type === "income"
@@ -312,7 +196,7 @@ export default function Home() {
                 </span>
 
                 <button onClick={() => startEdit(t)}>✏️</button>
-                <button onClick={() => deleteTransaction(t.id)}>🗑</button>
+                <button onClick={() => remove(t.id)}>🗑</button>
               </div>
             </div>
           ))}
