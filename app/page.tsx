@@ -2,14 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 type Transaction = {
   id: string;
@@ -19,8 +11,6 @@ type Transaction = {
   category: string;
   date: string;
 };
-
-const categories = ["אוכל", "תחבורה", "בילויים", "שכר", "אחר"];
 
 export default function Page() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -36,7 +26,7 @@ export default function Page() {
   const [search, setSearch] = useState("");
   const [month, setMonth] = useState("");
 
-  // 📥 Load
+  // 📥 Load data
   const load = async () => {
     const { data } = await supabase
       .from("transactions")
@@ -50,7 +40,7 @@ export default function Page() {
     load();
   }, []);
 
-  // 💾 Save
+  // 💾 Save (insert / update)
   const save = async () => {
     if (!title || !amount || !date) return;
 
@@ -126,19 +116,11 @@ export default function Page() {
 
   const balance = income - expense;
 
-  // 📊 chart
-  const chartData = categories.map((c) => ({
-    name: c,
-    value: monthFiltered
-      .filter((t) => t.category === c && t.type === "expense")
-      .reduce((s, t) => s + t.amount, 0),
-  }));
-
   return (
     <main className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow">
+      <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
 
-        <h1 className="text-2xl font-bold mb-4">💰 SmartBudget Pro</h1>
+        <h1 className="text-2xl font-bold mb-4">💰 SmartBudget</h1>
 
         {/* SUMMARY */}
         <div className="grid grid-cols-3 gap-2 mb-4">
@@ -151,7 +133,7 @@ export default function Page() {
         <div className="flex gap-2 mb-4">
           <input
             className="border p-2 flex-1"
-            placeholder="חיפוש"
+            placeholder="חיפוש..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -164,45 +146,55 @@ export default function Page() {
           />
         </div>
 
-        {/* CHART */}
-        <div className="h-64 mb-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#111827" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* FORM */}
         <div className="space-y-2 mb-6">
 
-          <input className="border p-2 w-full" placeholder="כותרת"
-            value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input
+            className="border p-2 w-full"
+            placeholder="כותרת"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
 
-          <input className="border p-2 w-full" placeholder="סכום"
-            value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <input
+            className="border p-2 w-full"
+            placeholder="סכום (ניתן להקליד)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
 
-          <select className="border p-2 w-full" value={type}
-            onChange={(e) => setType(e.target.value as any)}>
+          <select
+            className="border p-2 w-full"
+            value={type}
+            onChange={(e) => setType(e.target.value as any)}
+          >
             <option value="expense">הוצאה</option>
             <option value="income">הכנסה</option>
           </select>
 
-          <select className="border p-2 w-full" value={category}
-            onChange={(e) => setCategory(e.target.value)}>
-            {categories.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
+          <select
+            className="border p-2 w-full"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option>אוכל</option>
+            <option>תחבורה</option>
+            <option>בילויים</option>
+            <option>שכר</option>
+            <option>אחר</option>
           </select>
 
-          <input type="date" className="border p-2 w-full"
-            value={date} onChange={(e) => setDate(e.target.value)} />
+          <input
+            type="date"
+            className="border p-2 w-full"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
 
-          <button onClick={save}
-            className="bg-black text-white w-full p-2">
+          <button
+            onClick={save}
+            className="bg-black text-white w-full p-2"
+          >
             {editId ? "עדכן" : "הוסף"}
           </button>
         </div>
@@ -210,9 +202,10 @@ export default function Page() {
         {/* LIST */}
         <div className="space-y-2">
           {filtered.map((t) => (
-            <div key={t.id}
-              className="flex justify-between border p-2 rounded">
-
+            <div
+              key={t.id}
+              className="flex justify-between border p-2 rounded bg-white"
+            >
               <div>
                 <div className="font-bold">{t.title}</div>
                 <div className="text-xs text-gray-500">
@@ -221,9 +214,13 @@ export default function Page() {
               </div>
 
               <div className="flex gap-2 items-center">
-                <span className={t.type === "income"
-                  ? "text-green-600"
-                  : "text-red-600"}>
+                <span
+                  className={
+                    t.type === "income"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                >
                   ₪{t.amount}
                 </span>
 
