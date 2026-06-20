@@ -91,7 +91,6 @@ npm run dev
 
 
 מבנה בסיס נתונים (ERD)
-
 המערכת משתמשת בטבלה אחת:
 
 transactions
