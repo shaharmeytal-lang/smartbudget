@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 type Transaction = {
   id: string;
@@ -11,6 +19,8 @@ type Transaction = {
   category: string;
   date: string;
 };
+
+const categories = ["אוכל", "תחבורה", "בילויים", "שכר", "אחר"];
 
 export default function Page() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -23,23 +33,24 @@ export default function Page() {
 
   const [editId, setEditId] = useState<string | null>(null);
 
-  // 📥 Load data
+  const [search, setSearch] = useState("");
+  const [month, setMonth] = useState("");
+
+  // 📥 Load
   const load = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("transactions")
       .select("*")
       .order("date", { ascending: false });
 
-    if (!error) {
-      setTransactions((data as Transaction[]) || []);
-    }
+    setTransactions((data as Transaction[]) || []);
   };
 
   useEffect(() => {
     load();
   }, []);
 
-  // 💾 Save (insert / update)
+  // 💾 Save
   const save = async () => {
     if (!title || !amount || !date) return;
 
@@ -92,91 +103,116 @@ export default function Page() {
     setEditId(t.id);
   };
 
-  // 📊 Totals
-  const income = transactions
+  // 📅 Filter by month
+  const monthFiltered = useMemo(() => {
+    return transactions.filter((t) =>
+      month ? t.date.startsWith(month) : true
+    );
+  }, [transactions, month]);
+
+  // 🔎 Search
+  const filtered = monthFiltered.filter((t) =>
+    t.title.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // 💰 totals
+  const income = monthFiltered
     .filter((t) => t.type === "income")
     .reduce((s, t) => s + t.amount, 0);
 
-  const expense = transactions
+  const expense = monthFiltered
     .filter((t) => t.type === "expense")
     .reduce((s, t) => s + t.amount, 0);
 
   const balance = income - expense;
 
+  // 📊 chart
+  const chartData = categories.map((c) => ({
+    name: c,
+    value: monthFiltered
+      .filter((t) => t.category === c && t.type === "expense")
+      .reduce((s, t) => s + t.amount, 0),
+  }));
+
   return (
     <main className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
+      <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow">
 
-        <h1 className="text-2xl font-bold mb-4">💰 SmartBudget</h1>
+        <h1 className="text-2xl font-bold mb-4">💰 SmartBudget Pro</h1>
 
-        {/* Summary */}
+        {/* SUMMARY */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div>הכנסות: ₪{income}</div>
           <div>הוצאות: ₪{expense}</div>
           <div>יתרה: ₪{balance}</div>
         </div>
 
-        {/* Form */}
-        <div className="space-y-2 mb-4">
-
+        {/* FILTERS */}
+        <div className="flex gap-2 mb-4">
           <input
-            className="border p-2 w-full"
-            placeholder="כותרת"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            className="border p-2 flex-1"
+            placeholder="חיפוש"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
 
           <input
-            className="border p-2 w-full"
-            placeholder="סכום"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            type="month"
+            className="border p-2"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
           />
+        </div>
 
-          <select
-            className="border p-2 w-full"
-            value={type}
-            onChange={(e) => setType(e.target.value as any)}
-          >
+        {/* CHART */}
+        <div className="h-64 mb-6">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value" fill="#111827" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* FORM */}
+        <div className="space-y-2 mb-6">
+
+          <input className="border p-2 w-full" placeholder="כותרת"
+            value={title} onChange={(e) => setTitle(e.target.value)} />
+
+          <input className="border p-2 w-full" placeholder="סכום"
+            value={amount} onChange={(e) => setAmount(e.target.value)} />
+
+          <select className="border p-2 w-full" value={type}
+            onChange={(e) => setType(e.target.value as any)}>
             <option value="expense">הוצאה</option>
             <option value="income">הכנסה</option>
           </select>
 
-          <select
-            className="border p-2 w-full"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option>אוכל</option>
-            <option>תחבורה</option>
-            <option>בילויים</option>
-            <option>שכר</option>
-            <option>אחר</option>
+          <select className="border p-2 w-full" value={category}
+            onChange={(e) => setCategory(e.target.value)}>
+            {categories.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
           </select>
 
-          <input
-            type="date"
-            className="border p-2 w-full"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
+          <input type="date" className="border p-2 w-full"
+            value={date} onChange={(e) => setDate(e.target.value)} />
 
-          <button
-            onClick={save}
-            className="bg-black text-white w-full p-2"
-          >
+          <button onClick={save}
+            className="bg-black text-white w-full p-2">
             {editId ? "עדכן" : "הוסף"}
           </button>
-
         </div>
 
-        {/* List */}
+        {/* LIST */}
         <div className="space-y-2">
-          {transactions.map((t) => (
-            <div
-              key={t.id}
-              className="flex justify-between border p-2 rounded"
-            >
+          {filtered.map((t) => (
+            <div key={t.id}
+              className="flex justify-between border p-2 rounded">
+
               <div>
                 <div className="font-bold">{t.title}</div>
                 <div className="text-xs text-gray-500">
@@ -185,13 +221,9 @@ export default function Page() {
               </div>
 
               <div className="flex gap-2 items-center">
-                <span
-                  className={
-                    t.type === "income"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }
-                >
+                <span className={t.type === "income"
+                  ? "text-green-600"
+                  : "text-red-600"}>
                   ₪{t.amount}
                 </span>
 
