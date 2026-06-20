@@ -80,14 +80,6 @@ https://smartbudget-eight-bice.vercel.app/
 
 ---
 
-## ⚙️ הוראות הרצה
-
-```bash
-# התקנה
-npm install
-
-# הרצה מקומית
-npm run dev
 
 
 
