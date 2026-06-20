@@ -87,14 +87,6 @@ https://smartbudget-eight-bice.vercel.app/
 
 המערכת מבוססת על טבלה מרכזית אחת: `transactions`
 
-```mermaid
-erDiagram
+<img width="320" height="318" alt="image" src="https://github.com/user-attachments/assets/c9541ab9-57ee-4144-a65b-8fc2fb310788" />
 
-    transactions {
-        uuid id PK
-        text title
-        numeric amount
-        text type
-        text category
-        date date
-    }
+
